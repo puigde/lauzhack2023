@@ -180,15 +180,11 @@ def collect_data(cap, mon, calib_points=9, rand_points=5):
     return calib_data
 
 def main():
-<<<<<<< HEAD
     parser = argparse.ArgumentParser()
     parser.add_argument('--cam_id', type = int, default = 0)
     args = parser.parse_args()
 
     cam_idx = args.cam_id
-=======
-    cam_idx = 0
->>>>>>> 82cc0bf5ec6fa51b77db93225daa572b70fb77ee
     cam_cap = cv.VideoCapture(cam_idx)
     cam_cap.set(cv.CAP_PROP_FRAME_WIDTH, 640)
     cam_cap.set(cv.CAP_PROP_FRAME_HEIGHT, 480)
@@ -215,12 +211,8 @@ def main():
     max_x, max_y, min_x, min_y = -float('inf'),-float('inf'),float('inf'),float('inf')
     for im in data['frames']:
         print(np.array(im).shape)
-<<<<<<< HEAD
         cam_file_name = 'camera_pocha.xml' if cam_idx==0 else 'camera.xml'
         img_normalized, landmarks_normalized, pred_gaze_np =  pipeline_single_image(im[0], predictor, face_detector, model, cam_file_name)
-=======
-        img_normalized, landmarks_normalized, pred_gaze_np =  pipeline_single_image(im[0], predictor, face_detector, model)
->>>>>>> 82cc0bf5ec6fa51b77db93225daa572b70fb77ee
         _,x,y = draw_gaze(img_normalized, pred_gaze_np)
         max_x=max(max_x,x)
         max_y=max(max_y,y)
