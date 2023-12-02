@@ -1,3 +1,7 @@
 .venv
 logivision.egg-info
 OPENAI_API_KEY.txt
+logivision/ckpt/*.tar
+logivision/ckpt/*.pth
+logivision/ckpt/*.pt
+logivision/__pycache__
