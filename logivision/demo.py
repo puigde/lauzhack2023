@@ -3,6 +3,7 @@ import dlib
 import pickle
 import torch
 import argparse
+import pyautogui
 
 import cv2 as cv
 
@@ -12,6 +13,11 @@ from utils import pipeline_single_image, draw_gaze, gaze_network
 SAVED_CALIBRATIONS_PATH = "./saved_calibrations/"
 CAMERA_CALIBRATIONS_PATH = os.path.join(SAVED_CALIBRATIONS_PATH, "camera")
 CORNERS_CALIBRATIONS_PATH = os.path.join(SAVED_CALIBRATIONS_PATH, "corners")
+
+screen_width, screen_height = pyautogui.size()
+
+def cambiar_posicion_raton(x,y):
+    pyautogui.moveTo(x*screen_width,y*screen_height,1)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -74,10 +80,12 @@ if __name__ == "__main__":
             x = max(min(x, max_x), min_x)
             y = max(min(y, max_y), min_y)
 
-            norm_x = 224 * (x - min_x) / (max_x - min_x)
-            norm_y = 224 * (y - min_y) / (max_y - min_y)
+            norm_x = (x - min_x) / (max_x - min_x)
+            norm_y = (y - min_y) / (max_y - min_y)
+            
+            cambiar_posicion_raton(norm_x,norm_y)
 
-            cv.circle(img_normalized, (int(norm_x), int(norm_y)), 5, (0, 255, 0), -1)
+            cv.circle(img_normalized, (int(224*norm_x), int(224*norm_y)), 5, (0, 255, 0), -1)
             gray = cv.cvtColor(img_normalized, cv.COLOR_RGB2RGBA)
             # Display the resulting frame
             cv.imshow("frame", cv.flip(gray, 1))
