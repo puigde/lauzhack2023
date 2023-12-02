@@ -2,13 +2,15 @@ import os
 import dlib
 import pickle
 import torch
-from model import gaze_network
 import argparse
 
 import cv2 as cv
 
-from utils import pipeline_single_image, draw_gaze
+from utils import pipeline_single_image, draw_gaze, gaze_network
 
+
+SAVED_CALIBRATIONS_PATH = "./saved_calibrations/"
+CAMERA_CALIBRATIONS_PATH = os.path.join(SAVED_CALIBRATIONS_PATH, "camera")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -39,7 +41,9 @@ if __name__ == "__main__":
     """
     load screen corner values
     """
-    with open(f"screen_corners_{args.cam_id}.pkl", "rb") as f:
+    with open(
+        f"{CORNERS_CALIBRATIONS_PATH}/screen_corners_{args.cam_id}.pkl", "rb"
+    ) as f:
         min_x, min_y, max_x, max_y = pickle.load(f)
     print(min_x, min_y, max_x, max_y)
 
@@ -56,7 +60,11 @@ if __name__ == "__main__":
             print("Can't receive frame (stream end?). Exiting ...")
             break
         if not i % 4:
-            cam_file_name = "camera_pocha.xml" if args.cam_id == 0 else "camera.xml"
+            cam_file_name = (
+                f"{CAMERA_CALIBRATIONS_PATH}/camera_pocha.xml"
+                if args.cam_id == 0
+                else f"{CAMERA_CALIBRATIONS_PATH}/camera.xml"
+            )
             img_normalized, landmarks_normalized, pred_gaze_np = pipeline_single_image(
                 frame, predictor, face_detector, model, cam_file_name
             )

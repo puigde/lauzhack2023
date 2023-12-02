@@ -14,8 +14,7 @@ import numpy as np
 import pickle
 import argparse
 from subprocess import call
-from model import gaze_network
-from utils import draw_gaze, pipeline_single_image
+from utils import draw_gaze, pipeline_single_image, gaze_network
 
 sys.path.append("../logvision/")
 
@@ -24,6 +23,11 @@ keys = {"u": 82, "d": 84, "l": 81, "r": 83}
 
 global THREAD_RUNNING
 global frames
+
+
+SAVED_CALIBRATIONS_PATH = "./saved_calibrations/"
+CAMERA_CALIBRATIONS_PATH = os.path.join(SAVED_CALIBRATIONS_PATH, "camera")
+CORNERS_CALIBRATIONS_PATH = os.path.join(SAVED_CALIBRATIONS_PATH, "corners")
 
 
 class monitor:
@@ -127,7 +131,7 @@ def collect_data(cap, mon, calib_points=9, rand_points=5):
         frames = []
         THREAD_RUNNING = True
         th = threading.Thread(target=grab_img, args=(cap,))
-        
+
         direction = random.choice(directions)
         img, g_t = create_image(
             mon, direction, i, (0, 0, 0), grid=True, total=calib_points
@@ -155,7 +159,7 @@ def collect_data(cap, mon, calib_points=9, rand_points=5):
         frames = []
         THREAD_RUNNING = True
         th = threading.Thread(target=grab_img, args=(cap,))
-        
+
         direction = random.choice(directions)
         img, g_t = create_image(
             mon, direction, i, (0, 0, 0), grid=False, total=rand_points
@@ -179,9 +183,10 @@ def collect_data(cap, mon, calib_points=9, rand_points=5):
 
     return calib_data
 
+
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--cam_id', type = int, default = 0)
+    parser.add_argument("--cam_id", type=int, default=0)
     args = parser.parse_args()
 
     cam_idx = args.cam_id
@@ -189,38 +194,56 @@ def main():
     cam_cap.set(cv.CAP_PROP_FRAME_WIDTH, 640)
     cam_cap.set(cv.CAP_PROP_FRAME_HEIGHT, 480)
     mon = monitor()
-    '''
+    """
     load models and shit
-    '''
-    predictor = dlib.shape_predictor('./modules/shape_predictor_68_face_landmarks.dat')
-    #face_detector = dlib.cnn_face_detection_model_v1('./modules/mmod_human_face_detector.dat')
-    face_detector = dlib.get_frontal_face_detector()  ## this face detector is not very powerful
-    print('load gaze estimator')
+    """
+    predictor = dlib.shape_predictor("./modules/shape_predictor_68_face_landmarks.dat")
+    # face_detector = dlib.cnn_face_detection_model_v1('./modules/mmod_human_face_detector.dat')
+    face_detector = (
+        dlib.get_frontal_face_detector()
+    )  ## this face detector is not very powerful
+    print("load gaze estimator")
     model = gaze_network()
-    #model.cuda() # comment this line out if you are not using GPU
-    pre_trained_model_path = './ckpt/epoch_24_ckpt.pth.tar'
+    # model.cuda() # comment this line out if you are not using GPU
+    pre_trained_model_path = "./ckpt/epoch_24_ckpt.pth.tar"
     if not os.path.isfile(pre_trained_model_path):
-        print('the pre-trained gaze estimation model does not exist.')
+        print("the pre-trained gaze estimation model does not exist.")
         exit(0)
     else:
-        print('load the pre-trained model: ', pre_trained_model_path)
-    ckpt = torch.load(pre_trained_model_path, map_location='cpu')
-    model.load_state_dict(ckpt['model_state'], strict=True)  # load the pre-trained model
+        print("load the pre-trained model: ", pre_trained_model_path)
+    ckpt = torch.load(pre_trained_model_path, map_location="cpu")
+    model.load_state_dict(
+        ckpt["model_state"], strict=True
+    )  # load the pre-trained model
     model.eval()  # change it to the evaluation mode
     data = collect_data(cam_cap, mon, calib_points=9, rand_points=4)
-    max_x, max_y, min_x, min_y = -float('inf'),-float('inf'),float('inf'),float('inf')
-    for im in data['frames']:
+    max_x, max_y, min_x, min_y = (
+        -float("inf"),
+        -float("inf"),
+        float("inf"),
+        float("inf"),
+    )
+    for im in data["frames"]:
         print(np.array(im).shape)
-        cam_file_name = ('camera_pocha.xml' if cam_idx==0 else 'camera.xml')
-        img_normalized, landmarks_normalized, pred_gaze_np =  pipeline_single_image(im[0], predictor, face_detector, model, cam_file_name)
-        _,x,y = draw_gaze(img_normalized, pred_gaze_np)
-        max_x=max(max_x,x)
-        max_y=max(max_y,y)
-        min_x=min(min_x,x)
-        min_y=min(min_y,y)
-    
-    with open(f'screen_corners_{args.cam_id}.pkl','wb') as f:
-        pickle.dump((min_x,min_y,max_x,max_y),f)
+        cam_file_name = (
+            f"{CAMERA_CALIBRATIONS_PATH}/camera_pocha.xml"
+            if cam_idx == 0
+            else f"{CAMERA_CALIBRATIONS_PATH}/camera.xml"
+        )
+        img_normalized, landmarks_normalized, pred_gaze_np = pipeline_single_image(
+            im[0], predictor, face_detector, model, cam_file_name
+        )
+        _, x, y = draw_gaze(img_normalized, pred_gaze_np)
+        max_x = max(max_x, x)
+        max_y = max(max_y, y)
+        min_x = min(min_x, x)
+        min_y = min(min_y, y)
+
+    with open(
+        f"{CORNERS_CALIBRATIONS_PATH}/screen_corners_{args.cam_id}.pkl", "wb"
+    ) as f:
+        pickle.dump((min_x, min_y, max_x, max_y), f)
+
 
 if __name__ == "__main__":
     main()
