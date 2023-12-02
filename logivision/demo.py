@@ -24,10 +24,8 @@ def cambiar_posicion_raton(x,y):
     #pyautogui.dragTo(x*screen_width,y*screen_height)
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--cam_id", type=int, default=0)
-    args = parser.parse_args()
+def demo(args):
+    
     """
     load models and shit
     """
