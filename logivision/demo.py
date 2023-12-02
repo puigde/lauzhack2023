@@ -19,7 +19,7 @@ pyautogui.FAILSAFE = False
 
 def cambiar_posicion_raton(x,y):
     print(x*screen_width,y*screen_height)
-    pyautogui.moveTo(x*screen_width,y*screen_height)
+    pyautogui.moveTo(screen_width - x*screen_width,y*screen_height)
     
     #pyautogui.dragTo(x*screen_width,y*screen_height)
 

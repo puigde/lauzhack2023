@@ -5,3 +5,7 @@ logivision/ckpt/*.tar
 logivision/ckpt/*.pth
 logivision/ckpt/*.pt
 logivision/__pycache__
+
+logivision/saved_calibrations/camera/*
+logivision/saved_calibrations/corners/*
+
