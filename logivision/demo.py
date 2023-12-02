@@ -15,9 +15,14 @@ CAMERA_CALIBRATIONS_PATH = os.path.join(SAVED_CALIBRATIONS_PATH, "camera")
 CORNERS_CALIBRATIONS_PATH = os.path.join(SAVED_CALIBRATIONS_PATH, "corners")
 
 screen_width, screen_height = pyautogui.size()
+pyautogui.FAILSAFE = False
 
 def cambiar_posicion_raton(x,y):
-    pyautogui.moveTo(x*screen_width,y*screen_height,1)
+    print(x*screen_width,y*screen_height)
+    pyautogui.moveTo(x*screen_width,y*screen_height)
+    
+    #pyautogui.dragTo(x*screen_width,y*screen_height)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
