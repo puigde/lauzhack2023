@@ -38,7 +38,7 @@ if __name__ == '__main__':
     '''
     load screen corner values
     '''
-    with open('screen_corners.pkl','rb') as f:
+    with open(f'screen_corners_{args.cam_id}.pkl','rb') as f:
         min_x,min_y,max_x,max_y = pickle.load(f)
     print(min_x,min_y,max_x,max_y)
 

@@ -211,7 +211,7 @@ def main():
     max_x, max_y, min_x, min_y = -float('inf'),-float('inf'),float('inf'),float('inf')
     for im in data['frames']:
         print(np.array(im).shape)
-        cam_file_name = 'camera_pocha.xml' if cam_idx==0 else 'camera.xml'
+        cam_file_name = ('camera_pocha.xml' if cam_idx==0 else 'camera.xml')
         img_normalized, landmarks_normalized, pred_gaze_np =  pipeline_single_image(im[0], predictor, face_detector, model, cam_file_name)
         _,x,y = draw_gaze(img_normalized, pred_gaze_np)
         max_x=max(max_x,x)
@@ -219,7 +219,7 @@ def main():
         min_x=min(min_x,x)
         min_y=min(min_y,y)
     
-    with open('screen_corners.pkl','wb') as f:
+    with open(f'screen_corners_{args.cam_id}.pkl','wb') as f:
         pickle.dump((min_x,min_y,max_x,max_y),f)
 
 if __name__ == "__main__":
