@@ -8,9 +8,6 @@ from torchvision import transforms
 from model import gaze_network
 import argparse
 
-
-from head_pose import HeadPoseEstimator
-
 import cv2 as cv
 
 trans = transforms.Compose([
@@ -113,7 +110,7 @@ def pipeline_single_image(image, predictor, face_detector, model):
     landmarks = np.asarray(landmarks)
 
     # load camera information
-    cam_file_name = './example/input/cam00.xml'  # this is camera calibration information file obtained with OpenCV
+    cam_file_name = 'camera.xml'  # this is camera calibration information file obtained with OpenCV
     if not os.path.isfile(cam_file_name):
         print('no camera calibration file is found.')
         exit(0)
@@ -197,10 +194,10 @@ if __name__ == '__main__':
     #     output_path = args.output
     #     print('save output image to: ', o)
     #     cv2.imwrite(o, face_patch_gaze)
-    # cap = cv.VideoCapture(0)
-    # if not cap.isOpened():
-    #     print("Cannot open camera")
-    #     exit()
+    cap = cv.VideoCapture(0)
+    if not cap.isOpened():
+        print("Cannot open camera")
+        exit()
     i=0
     max_x, max_y, min_x, min_y = -float('inf'),-float('inf'),float('inf'),float('inf')
     while True:
@@ -210,7 +207,7 @@ if __name__ == '__main__':
         if not ret:
             print("Can't receive frame (stream end?). Exiting ...")
             break
-        if not i%2:
+        if not i%4:
             img_normalized, landmarks_normalized, pred_gaze_np =  pipeline_single_image(frame, predictor, face_detector, model)
             print(pred_gaze_np)
             print(min_x,min_y,max_x,max_y)
