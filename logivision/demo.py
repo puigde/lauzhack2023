@@ -175,32 +175,32 @@ if __name__ == '__main__':
     ckpt = torch.load(pre_trained_model_path, map_location='cpu')
     model.load_state_dict(ckpt['model_state'], strict=True)  # load the pre-trained model
     model.eval()  # change it to the evaluation mode
-    if os.path.isdir(args.input):
-        names = os.listdir(args.input)
-        inlist = [os.path.join(args.input,name) for name in names]
-        outlist = [os.path.join(args.output,name) for name in names]
-        os.makedirs(args.output, exist_ok = True)
-    else:
-        inlist = [args.input]
-        outlist = [args.output]
+    # if os.path.isdir(args.input):
+    #     names = os.listdir(args.input)
+    #     inlist = [os.path.join(args.input,name) for name in names]
+    #     outlist = [os.path.join(args.output,name) for name in names]
+    #     os.makedirs(args.output, exist_ok = True)
+    # else:
+    #     inlist = [args.input]
+    #     outlist = [args.output]
     
-    for i,o in zip(inlist,outlist):
-        print('load input face image: ', i)
-        image = cv2.imread(i)
-        img_normalized, landmarks_normalized, pred_gaze_np =  pipeline_single_image(image, predictor, face_detector, model)
-        print('prepare the output')
-        # draw the facial landmarks
-        landmarks_normalized = landmarks_normalized.astype(int) # landmarks after data normalization
-        for (x, y) in landmarks_normalized:
-            cv2.circle(img_normalized, (x, y), 5, (0, 255, 0), -1)
-        face_patch_gaze,x,y = draw_gaze(img_normalized, pred_gaze_np)  # draw gaze direction on the normalized face image
-        output_path = args.output
-        print('save output image to: ', o)
-        cv2.imwrite(o, face_patch_gaze)
-    cap = cv.VideoCapture(0)
-    if not cap.isOpened():
-        print("Cannot open camera")
-        exit()
+    # for i,o in zip(inlist,outlist):
+    #     print('load input face image: ', i)
+    #     image = cv2.imread(i)
+    #     img_normalized, landmarks_normalized, pred_gaze_np =  pipeline_single_image(image, predictor, face_detector, model)
+    #     print('prepare the output')
+    #     # draw the facial landmarks
+    #     landmarks_normalized = landmarks_normalized.astype(int) # landmarks after data normalization
+    #     for (x, y) in landmarks_normalized:
+    #         cv2.circle(img_normalized, (x, y), 5, (0, 255, 0), -1)
+    #     face_patch_gaze,x,y = draw_gaze(img_normalized, pred_gaze_np)  # draw gaze direction on the normalized face image
+    #     output_path = args.output
+    #     print('save output image to: ', o)
+    #     cv2.imwrite(o, face_patch_gaze)
+    # cap = cv.VideoCapture(0)
+    # if not cap.isOpened():
+    #     print("Cannot open camera")
+    #     exit()
     i=0
     max_x, max_y, min_x, min_y = -float('inf'),-float('inf'),float('inf'),float('inf')
     while True:
