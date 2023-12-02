@@ -188,7 +188,7 @@ def main():
     load models and shit
     '''
     predictor = dlib.shape_predictor('./modules/shape_predictor_68_face_landmarks.dat')
-    # face_detector = dlib.cnn_face_detection_model_v1('./modules/mmod_human_face_detector.dat')
+    #face_detector = dlib.cnn_face_detection_model_v1('./modules/mmod_human_face_detector.dat')
     face_detector = dlib.get_frontal_face_detector()  ## this face detector is not very powerful
     print('load gaze estimator')
     model = gaze_network()
@@ -205,6 +205,7 @@ def main():
     data = collect_data(cam_cap, mon, calib_points=9, rand_points=4)
     max_x, max_y, min_x, min_y = -float('inf'),-float('inf'),float('inf'),float('inf')
     for im in data['frames']:
+        print(np.array(im).shape)
         img_normalized, landmarks_normalized, pred_gaze_np =  pipeline_single_image(im[0], predictor, face_detector, model)
         _,x,y = draw_gaze(img_normalized, pred_gaze_np)
         max_x=max(max_x,x)
