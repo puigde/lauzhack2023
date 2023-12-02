@@ -11,6 +11,7 @@ from utils import pipeline_single_image, draw_gaze, gaze_network
 
 SAVED_CALIBRATIONS_PATH = "./saved_calibrations/"
 CAMERA_CALIBRATIONS_PATH = os.path.join(SAVED_CALIBRATIONS_PATH, "camera")
+CORNERS_CALIBRATIONS_PATH = os.path.join(SAVED_CALIBRATIONS_PATH, "corners")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
