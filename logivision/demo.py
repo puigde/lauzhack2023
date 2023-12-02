@@ -77,8 +77,12 @@ if __name__ == '__main__':
             print("Can't receive frame (stream end?). Exiting ...")
             break
         if not i%4:
+<<<<<<< HEAD
             cam_file_name = 'camera_pocha.xml' if args.cam_id==0 else 'camera.xml'
             img_normalized, landmarks_normalized, pred_gaze_np =  pipeline_single_image(frame, predictor, face_detector, model, cam_file_name)
+=======
+            img_normalized, landmarks_normalized, pred_gaze_np =  pipeline_single_image(frame, predictor, face_detector, model)
+>>>>>>> 82cc0bf5ec6fa51b77db93225daa572b70fb77ee
             _,x,y = draw_gaze(img_normalized, pred_gaze_np)
 
             x = max(min(x,max_x),min_x)

@@ -95,7 +95,11 @@ def normalizeData_face(img, face_model, landmarks, hr, ht, cam):
     return img_warped, landmarks_warped
     
     
+<<<<<<< HEAD
 def pipeline_single_image(image, predictor, face_detector, model, cam_file_name ='camera.xml'):
+=======
+def pipeline_single_image(image, predictor, face_detector, model):
+>>>>>>> 82cc0bf5ec6fa51b77db93225daa572b70fb77ee
     detected_faces = face_detector(cv.cvtColor(image, cv.COLOR_BGR2RGB), 1) ## convert BGR image to RGB for dlib
     if len(detected_faces) == 0:
         print('warning: no detected face')
@@ -109,6 +113,10 @@ def pipeline_single_image(image, predictor, face_detector, model, cam_file_name 
     landmarks = np.asarray(landmarks)
 
     # load camera information
+<<<<<<< HEAD
+=======
+    cam_file_name = 'camera.xml'  # this is camera calibration information file obtained with OpenCV
+>>>>>>> 82cc0bf5ec6fa51b77db93225daa572b70fb77ee
     if not os.path.isfile(cam_file_name):
         print('no camera calibration file is found.')
         exit(0)
