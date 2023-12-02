@@ -2,17 +2,20 @@ import gi.repository
 
 gi.require_version("Gdk", "3.0")
 from gi.repository import Gdk
-import numpy as np
-import cv2
-import numpy as np
 import random
 import threading
 import pickle
+import os
 import sys
-import cv2
+import cv2 as cv
+import dlib
+import torch
 import numpy as np
 import pickle
+import argparse
 from subprocess import call
+from model import gaze_network
+from utils import draw_gaze, pipeline_single_image
 
 sys.path.append("../logvision/")
 
@@ -80,21 +83,21 @@ def create_image(mon, direction, i, color, target="E", grid=True, total=9):
     x_cam, y_cam, z_cam = mon.monitor_to_camera(x, y)
     g_t = (x_cam, y_cam)
 
-    font = cv2.FONT_HERSHEY_SIMPLEX
+    font = cv.FONT_HERSHEY_SIMPLEX
     img = np.ones((h, w, 3), np.float32)
     if direction == "r" or direction == "l":
         if direction == "r":
-            cv2.putText(img, target, (x, y), font, 0.5, color, 2, cv2.LINE_AA)
+            cv.putText(img, target, (x, y), font, 0.5, color, 2, cv.LINE_AA)
         elif direction == "l":
-            cv2.putText(img, target, (w - x, y), font, 0.5, color, 2, cv2.LINE_AA)
-            img = cv2.flip(img, 1)
+            cv.putText(img, target, (w - x, y), font, 0.5, color, 2, cv.LINE_AA)
+            img = cv.flip(img, 1)
     elif direction == "u" or direction == "d":
         imgT = np.ones((w, h, 3), np.float32)
         if direction == "d":
-            cv2.putText(imgT, target, (y, x), font, 0.5, color, 2, cv2.LINE_AA)
+            cv.putText(imgT, target, (y, x), font, 0.5, color, 2, cv.LINE_AA)
         elif direction == "u":
-            cv2.putText(imgT, target, (h - y, x), font, 0.5, color, 2, cv2.LINE_AA)
-            imgT = cv2.flip(imgT, 1)
+            cv.putText(imgT, target, (h - y, x), font, 0.5, color, 2, cv.LINE_AA)
+            imgT = cv.flip(imgT, 1)
         img = imgT.transpose((1, 0, 2))
 
     return img, g_t
@@ -112,8 +115,8 @@ def collect_data(cap, mon, calib_points=9, rand_points=5):
     global THREAD_RUNNING
     global frames
 
-    cv2.namedWindow("image", cv2.WINDOW_NORMAL)
-    cv2.setWindowProperty("image", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+    cv.namedWindow("image", cv.WINDOW_NORMAL)
+    cv.setWindowProperty("image", cv.WND_PROP_FULLSCREEN, cv.WINDOW_FULLSCREEN)
 
     calib_data = {"frames": [], "g_t": []}
 
@@ -124,13 +127,14 @@ def collect_data(cap, mon, calib_points=9, rand_points=5):
         frames = []
         THREAD_RUNNING = True
         th = threading.Thread(target=grab_img, args=(cap,))
-        th.start()
+        
         direction = random.choice(directions)
         img, g_t = create_image(
             mon, direction, i, (0, 0, 0), grid=True, total=calib_points
         )
-        cv2.imshow("image", img)
-        key_press = cv2.waitKey(0)
+        cv.imshow("image", img)
+        key_press = cv.waitKey(0)
+        th.start()
         if key_press == keys[direction]:
             THREAD_RUNNING = False
             th.join()
@@ -138,7 +142,7 @@ def collect_data(cap, mon, calib_points=9, rand_points=5):
             calib_data["g_t"].append(g_t)
             i += 1
         elif key_press & 0xFF == ord("q"):
-            cv2.destroyAllWindows()
+            cv.destroyAllWindows()
             break
         else:
             THREAD_RUNNING = False
@@ -151,13 +155,14 @@ def collect_data(cap, mon, calib_points=9, rand_points=5):
         frames = []
         THREAD_RUNNING = True
         th = threading.Thread(target=grab_img, args=(cap,))
-        th.start()
+        
         direction = random.choice(directions)
         img, g_t = create_image(
             mon, direction, i, (0, 0, 0), grid=False, total=rand_points
         )
-        cv2.imshow("image", img)
-        key_press = cv2.waitKey(0)
+        cv.imshow("image", img)
+        key_press = cv.waitKey(0)
+        th.start()
         if key_press == keys[direction]:
             THREAD_RUNNING = False
             th.join()
@@ -165,91 +170,57 @@ def collect_data(cap, mon, calib_points=9, rand_points=5):
             calib_data["g_t"].append(g_t)
             i += 1
         elif key_press & 0xFF == ord("q"):
-            cv2.destroyAllWindows()
+            cv.destroyAllWindows()
             break
         else:
             THREAD_RUNNING = False
             th.join()
-    cv2.destroyAllWindows()
+    cv.destroyAllWindows()
 
     return calib_data
 
-
-def cam_calibrate(cam_idx, cap, cam_calib):
-
-    # termination criteria
-    criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
-
-    # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
-    pts = np.zeros((6 * 9, 3), np.float32)
-    pts[:, :2] = np.mgrid[0:9, 0:6].T.reshape(-1, 2)
-
-    # capture calibration frames
-    obj_points = []  # 3d point in real world space
-    img_points = []  # 2d points in image plane.
-    frames = []
-    while True:
-        ret, frame = cap.read()
-        frame_copy = frame.copy()
-
-        corners = []
-        if ret:
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            retc, corners = cv2.findChessboardCorners(gray, (9, 6), None)
-            if retc:
-                cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
-                # Draw and display the corners
-                cv2.drawChessboardCorners(frame_copy, (9, 6), corners, ret)
-
-                cv2.imshow("points", frame_copy)
-                # s to save, c to continue, q to quit
-                if cv2.waitKey(0) & 0xFF == ord("s"):
-                    img_points.append(corners)
-                    obj_points.append(pts)
-                    frames.append(frame)
-                elif cv2.waitKey(0) & 0xFF == ord("c"):
-                    continue
-                elif cv2.waitKey(0) & 0xFF == ord("q"):
-                    print("Calibrating camera...")
-                    cv2.destroyAllWindows()
-                    break
-
-    # compute calibration matrices
-
-    ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(
-        obj_points, img_points, frames[0].shape[0:2], None, None
-    )
-
-    # check
-    error = 0.0
-    for i in range(len(frames)):
-        proj_imgpoints, _ = cv2.projectPoints(
-            obj_points[i], rvecs[i], tvecs[i], mtx, dist
-        )
-        error += cv2.norm(img_points[i], proj_imgpoints, cv2.NORM_L2) / len(
-            proj_imgpoints
-        )
-    print(
-        "Camera calibrated successfully, total re-projection error: %f"
-        % (error / len(frames))
-    )
-
-    cam_calib["mtx"] = mtx
-    cam_calib["dist"] = dist
-    print("Camera parameters:")
-    print(cam_calib)
-
-    pickle.dump(cam_calib, open("calib_cam%d.pkl" % (cam_idx), "wb"))
-
-
 def main():
-    cam_idx = 0
-    cam_cap = cv2.VideoCapture(cam_idx)
-    cam_cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-    cam_cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-    mon = monitor()
-    # data = collect_data(cam_cap, mon, calib_points=9, rand_points=4)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--cam_id', type = int, default = 0)
+    args = parser.parse_args()
 
+    cam_idx = args.cam_id
+    cam_cap = cv.VideoCapture(cam_idx)
+    cam_cap.set(cv.CAP_PROP_FRAME_WIDTH, 640)
+    cam_cap.set(cv.CAP_PROP_FRAME_HEIGHT, 480)
+    mon = monitor()
+    '''
+    load models and shit
+    '''
+    predictor = dlib.shape_predictor('./modules/shape_predictor_68_face_landmarks.dat')
+    #face_detector = dlib.cnn_face_detection_model_v1('./modules/mmod_human_face_detector.dat')
+    face_detector = dlib.get_frontal_face_detector()  ## this face detector is not very powerful
+    print('load gaze estimator')
+    model = gaze_network()
+    #model.cuda() # comment this line out if you are not using GPU
+    pre_trained_model_path = './ckpt/epoch_24_ckpt.pth.tar'
+    if not os.path.isfile(pre_trained_model_path):
+        print('the pre-trained gaze estimation model does not exist.')
+        exit(0)
+    else:
+        print('load the pre-trained model: ', pre_trained_model_path)
+    ckpt = torch.load(pre_trained_model_path, map_location='cpu')
+    model.load_state_dict(ckpt['model_state'], strict=True)  # load the pre-trained model
+    model.eval()  # change it to the evaluation mode
+    data = collect_data(cam_cap, mon, calib_points=9, rand_points=4)
+    max_x, max_y, min_x, min_y = -float('inf'),-float('inf'),float('inf'),float('inf')
+    for im in data['frames']:
+        print(np.array(im).shape)
+        cam_file_name = 'camera_pocha.xml' if cam_idx==0 else 'camera.xml'
+        img_normalized, landmarks_normalized, pred_gaze_np =  pipeline_single_image(im[0], predictor, face_detector, model, cam_file_name)
+        _,x,y = draw_gaze(img_normalized, pred_gaze_np)
+        max_x=max(max_x,x)
+        max_y=max(max_y,y)
+        min_x=min(min_x,x)
+        min_y=min(min_y,y)
+    
+    with open('screen_corners.pkl','wb') as f:
+        pickle.dump((min_x,min_y,max_x,max_y),f)
 
 if __name__ == "__main__":
     main()

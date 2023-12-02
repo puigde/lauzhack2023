@@ -13,12 +13,18 @@ from os import path
 
 from camera import cam_calibrate
 
+import argparse
 
 #################################
 # Start camera
 #################################
 
-cam_idx = 0
+parser = argparse.ArgumentParser()
+parser.add_argument('--cam_id', type = int, default = 0)
+args = parser.parse_args()
+
+cam_idx = args.cam_id
+
 
 # adjust these for your camera to get the best accuracy
 # use the same parameters to run the actual demoqsqq

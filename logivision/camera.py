@@ -87,6 +87,6 @@ def cam_calibrate(cam_idx, cap, cam_calib):
         </data></Distortion_Coefficients>
         </opencv_storage>'''
 
-    fname = "camera.xml"
+    fname = "camera.xml" if cam_idx == 2 else "camera_pocha.xml"
     with open(fname, "w") as f:
         f.write(xml_content)
