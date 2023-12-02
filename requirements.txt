@@ -1,0 +1,15 @@
+black==23.11.0
+cfgv==3.4.0
+click==8.1.7
+distlib==0.3.7
+filelock==3.13.1
+identify==2.5.32
+-e git+https://github.com/puigde/lauzhack2023.git@ac31e38333ec329aaeec50bce5cf8c7020846a2f#egg=logivision
+mypy-extensions==1.0.0
+nodeenv==1.8.0
+packaging==23.2
+pathspec==0.11.2
+platformdirs==4.0.0
+pre-commit==3.5.0
+PyYAML==6.0.1
+virtualenv==20.25.0
